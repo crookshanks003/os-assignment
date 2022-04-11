@@ -1,10 +1,59 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-//single threaded function to read file
+struct args {
+	int start;
+	long long int bytes_per_thread;
+	char *file_name;
+};
+
+const int MAX_THREADS = 100;
+int num_read_arr[100];
+
+void *th_func(void *args) {
+	struct args *a;
+	a = (struct args *)args;
+	int content[10000];
+	FILE *fp;
+
+
+	fp = fopen(a->file_name, "r");
+	fseek(fp, a->start * a->bytes_per_thread, SEEK_SET);
+	long long int fp_end = ftell(fp) + a->bytes_per_thread;
+
+	if(a->start == 0){
+	} else {
+		while (fgetc(fp) != ' ')
+			;
+	}
+
+	int num_read = 0;
+
+	for (int i = 0; i < 10000; i++) {
+		fscanf(fp, "%d", &content[i]);
+		num_read++;
+
+		if (ftell(fp) >= fp_end || feof(fp)) {
+			break;
+		}
+		
+	}
+
+	for (int i = 0; i < num_read; i++) {
+		printf("%d ", content[i]);
+	}
+
+	num_read_arr[a->start] = num_read;
+
+	return 0;
+}
+
 int main(int argc, char *argv[]) {
 	FILE *fp;
-	int size;
+	long long int size;
+	pthread_t threads[MAX_THREADS];
 
 	if (argc != 3) {
 		printf("Provide number of numbers and filename");
@@ -12,13 +61,30 @@ int main(int argc, char *argv[]) {
 	}
 
 	size = atoi(argv[1]);
-	int content [size];
-	fp = fopen(argv[2], "r");
+	char *file_name = argv[2];
+	int th_start_factor = size / MAX_THREADS;
+	struct args args_array[MAX_THREADS];
 
-	for (int i = 0; i < size; i++){
-		fscanf(fp, "%d", &content[i]);
+	fp = fopen(file_name, "r");
+	fseek(fp, 0, SEEK_END);
+	long long int file_size = ftell(fp);
+
+	for (int i = 0; i < MAX_THREADS; i++) {
+		struct args a;
+		a.start = i;
+		a.bytes_per_thread = file_size / MAX_THREADS + 1;
+		a.file_name = file_name;
+
+		args_array[i] = a;
 	}
 
-	printf("file loaded");
+	for (int i = 0; i < MAX_THREADS; i++) {
+		pthread_create(&threads[i], NULL, th_func, &args_array[i]);
+	}
+
+	for (int i = 0; i < MAX_THREADS; i++) {
+		pthread_join(threads[i], NULL);
+	}
+
 	return 0;
 }

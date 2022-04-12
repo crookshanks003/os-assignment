@@ -1,3 +1,4 @@
 *.out
 test.c
+test1.c
 soln.*

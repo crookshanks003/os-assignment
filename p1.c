@@ -6,6 +6,7 @@
 struct args {
 	int start;
 	long long int bytes_per_thread;
+	int size;
 	char *file_name;
 };
 
@@ -15,7 +16,8 @@ int num_read_arr[100];
 void *th_func(void *args) {
 	struct args *a;
 	a = (struct args *)args;
-	int content[10000];
+	int arr_size = a->size/MAX_THREADS + MAX_THREADS;
+	int content[arr_size];
 	FILE *fp;
 
 
@@ -31,7 +33,7 @@ void *th_func(void *args) {
 
 	int num_read = 0;
 
-	for (int i = 0; i < 10000; i++) {
+	for (int i = 0; i < arr_size; i++) {
 		fscanf(fp, "%d", &content[i]);
 		num_read++;
 
@@ -74,6 +76,7 @@ int main(int argc, char *argv[]) {
 		a.start = i;
 		a.bytes_per_thread = file_size / MAX_THREADS + 1;
 		a.file_name = file_name;
+		a.size = size;
 
 		args_array[i] = a;
 	}

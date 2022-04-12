@@ -21,7 +21,6 @@ long ind = 1; //store the current index of number
 pthread_mutex_t lock;
 
 void *th_func(void *args) {
-	int *arr;
 	struct args *a;
 	a = (struct args *)args;
 	int arr_size = a->size / MAX_THREADS + MAX_THREADS;

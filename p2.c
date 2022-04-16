@@ -22,7 +22,7 @@ void *th_function(void *args){
 	struct args *a;
 	a = (struct args *)args;
 
-	long long int local_sum = 0;
+	long int local_sum = 0;
 	
 	for (int i = a->start; i <= a->end; i++){
 		local_sum += numbers[i];
@@ -37,15 +37,18 @@ void *th_function(void *args){
 }
 
 int main() {
+	clock_t t;
+    t = clock();
 	pthread_mutex_init(&lock, NULL);
 
-	key_t key = ftok("numbers", 65);
-	int shmid = shmget(key, sizeof(int) * 1000, 0666 | IPC_CREAT);
+	key_t key = ftok("p1.c", 65);
+	int shmid = shmget(key, sizeof(int) * 100, 0666 | IPC_CREAT);
 
 	numbers = (int *)shmat(shmid, 0, 0);
 	//first member of array is size
 	size = numbers[0];
 
+	int rem = size%MAX_THREAD;
 	int num_per_thread = size/MAX_THREAD;
 
 	pthread_t threads[MAX_THREAD];
@@ -54,7 +57,7 @@ int main() {
 	for (int i = 0; i < MAX_THREAD; i++){
 		struct args arg;
 		arg.start = i*num_per_thread + 1;
-		arg.end = (i+1)*num_per_thread;
+		arg.end = (i+1)*num_per_thread + (int)(i<rem);
 
 		th_args[i] = arg;
 	}
@@ -67,9 +70,16 @@ int main() {
 		pthread_join(threads[i], NULL);
 	}
 
-	printf("sum is: %lld", sum);
-	pthread_mutex_destroy(&lock);
-	shmdt(numbers);
+	printf("sum is: %lld\n", sum);
 
+	pthread_mutex_destroy(&lock);
+
+	shmdt(numbers);
 	shmctl(shmid, IPC_RMID, NULL);
+
+	t = clock() - t;
+    double time_taken = ((double)t)/CLOCKS_PER_SEC; // in seconds
+  
+    printf("%f seconds to execute \n", time_taken);
+
 }

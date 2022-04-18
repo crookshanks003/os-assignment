@@ -1,5 +1,5 @@
 f_soln = open("soln.txt", "r")
-f_que = open("hundred.txt", "r")
+f_que = open("thousand.txt", "r")
 
 soln = f_soln.read();
 que = f_que.read()

@@ -16,7 +16,7 @@ int task_complete = 0;
 pthread_cond_t cond_shm2;
 pthread_mutex_t mutex_shm2;
 
-//thread for watching the task status of process 1 and 2
+// thread for watching the task status of process 1 and 2
 void *watchman_task(void *args) {
 
 	int status, pid;
@@ -62,7 +62,7 @@ void *process2_task(void *args) {
 
 int main() {
 	pthread_t watchman;
-	int tq = 1*1000; //time-quant in microseconds
+	int tq = 1 * 1000; // time-quant in microseconds
 
 	child[0] = fork();
 
@@ -73,24 +73,8 @@ int main() {
 		child[1] = fork();
 
 		if (child[1] == 0) {
-			printf("Child 2\n");
-			/* pthread_t task_thread; */
-			/* pthread_mutex_init(&mutex_shm2, NULL); */
-			/* pthread_cond_init(&cond_shm2, NULL); */
-			/* pthread_create(&task_thread, NULL, process2_task, NULL); */
-
-			/* while (task2_complete == 0) { */
-			/* 	while (process_2 == 0) { */
-			/* 		usleep(1); */
-			/* 	} */
-			/* 	pthread_mutex_lock(&mutex_shm2); */
-			/* 	pthread_cond_signal(&cond_shm2); */
-			/* 	pthread_mutex_unlock(&mutex_shm2); */
-			/* } */
-			/* pthread_join(task_thread, NULL); */
-			/* pthread_mutex_destroy(&mutex_shm2); */
-			/* pthread_cond_destroy(&cond_shm2); */
-
+			char *argv[] = {"./p2.out", NULL};
+			execv(argv[0], argv);
 		} else {
 			pthread_create(&watchman, NULL, watchman_task, NULL);
 			printf("Scheduling...\n");

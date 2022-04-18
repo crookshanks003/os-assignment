@@ -17,7 +17,6 @@ int read_status_from_mem(int process) {
 	int *p_status = (int *)shmat(shmid, 0, 0);
 	int ret = p_status[process];
 
-	printf("%d ", ret);
 	shmdt(p_status);
 	return ret;
 }

@@ -11,15 +11,21 @@
 #include "lib.h"
 
 struct args {
-	int start;
-	long long int bytes_per_thread;
+	int index;
+	long int start;
+	long int end;
+	long long int bytes_this_thread;
 	int size;
 	char *file_name;
 };
 
 const int MAX_THREADS = 10;
+
 int *numbers; // store numbers read
 long ind = 1; // store the current index of numbers
+long int file_size;
+int bytes_per_thread;
+
 int can_run = 0;
 int task_completed = 0;
 
@@ -31,7 +37,6 @@ void *th_func(void *args) {
 
 	pthread_mutex_lock(&cond_lock);
 	if (can_run == 0) {
-		printf("Process 1 is sleeping\n");
 		pthread_cond_wait(&cond, &cond_lock);
 	}
 	pthread_mutex_unlock(&cond_lock);
@@ -44,8 +49,7 @@ void *th_func(void *args) {
 	FILE *fp;
 
 	fp = fopen(a->file_name, "r");
-	fseek(fp, a->start * a->bytes_per_thread, SEEK_SET);
-	long long int fp_end = ftell(fp) + a->bytes_per_thread;
+	fseek(fp, a->start, SEEK_SET);
 
 	if (a->start == 0) {
 	} else {
@@ -59,13 +63,12 @@ void *th_func(void *args) {
 		fscanf(fp, "%d", &content[i]);
 		num_read++;
 
-		if (ftell(fp) >= fp_end || feof(fp)) {
+		if (ftell(fp) >= a->end || feof(fp)) {
 			break;
 		}
 
 		pthread_mutex_lock(&cond_lock);
 		if (can_run == 0) {
-			printf("Process 1 is sleeping in loop\n");
 			pthread_cond_wait(&cond, &cond_lock);
 		}
 		pthread_mutex_unlock(&cond_lock);
@@ -77,7 +80,6 @@ void *th_func(void *args) {
 		ind++;
 		pthread_mutex_lock(&cond_lock);
 		if (can_run == 0) {
-			printf("Process 1 is sleeping in loop\n");
 			pthread_cond_wait(&cond, &cond_lock);
 		}
 		pthread_mutex_unlock(&cond_lock);
@@ -124,16 +126,24 @@ int main(int argc, char *argv[]) {
 	numbers[0] = size;
 
 	fseek(fp, 0, SEEK_END);
-	long long int file_size = ftell(fp);
+	file_size = ftell(fp);
+	bytes_per_thread = file_size / MAX_THREADS;
 	int rem = file_size % MAX_THREADS;
 
+	long int curr_fp = 0;
+	int total_bytes = 0;
 	for (int i = 0; i < MAX_THREADS; i++) {
 		struct args a;
-		a.start = i;
-		a.bytes_per_thread = file_size / MAX_THREADS + (int)(i < rem);
+
+		a.index = i;
+		a.start = curr_fp;
+		a.bytes_this_thread = bytes_per_thread + (i < rem);
+		a.end = curr_fp + a.bytes_this_thread;
 		a.file_name = file_name;
 		a.size = size;
 
+		total_bytes += a.bytes_this_thread;
+		curr_fp += a.bytes_this_thread;
 		args_array[i] = a;
 	}
 
@@ -163,10 +173,6 @@ int main(int argc, char *argv[]) {
 		pthread_join(threads[i], NULL);
 	}
 
-	for (int i = 0; i < 1000; i++){
-		printf("%d ", numbers[i]);
-	}
-
 	shmdt(numbers);
 	pthread_mutex_destroy(&lock);
 	pthread_mutex_destroy(&cond_lock);
@@ -178,6 +184,6 @@ int main(int argc, char *argv[]) {
 
 
 	printf("%f seconds to execute \n", time_taken);
-	printf("wait time is %f", wait_time);
+	printf("wait time is %f\n", wait_time);
 	return 0;
 }

@@ -95,7 +95,7 @@ int main() {
 			pthread_create(&watchman, NULL, watchman_task, NULL);
 			printf("Scheduling...\n");
 			for (long long i = 0; task_complete == 0; i++) {
-				if (child[i % 2] == -1) continue;
+				/* if (child[i % 2] == -1) continue; */
 
 				write_status_to_mem(0, i % 2 == 0);
 				write_status_to_mem(1, i % 2 == 1);

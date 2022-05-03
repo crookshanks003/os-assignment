@@ -124,5 +124,6 @@ int main() {
 	t = clock() - t;
 	double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
 
+	printf("wait time for 2 is %f\n", wait_time);
 	printf("%f seconds to execute \n", time_taken);
 }

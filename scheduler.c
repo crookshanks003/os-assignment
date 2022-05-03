@@ -35,31 +35,6 @@ void *watchman_task(void *args) {
 	return 0;
 }
 
-void *process2_task(void *args) {
-
-	pthread_mutex_lock(&mutex_shm2);
-	if (process_2 == 0) {
-		printf("Process 2 is sleeping");
-		pthread_cond_wait(&cond_shm2, &mutex_shm2);
-	}
-	pthread_mutex_unlock(&mutex_shm2);
-
-	unsigned long int sum = 0;
-	for (int i = 0; i < 500; i++) {
-		sum += i;
-		pthread_mutex_lock(&mutex_shm2);
-		if (process_2 == 0) {
-			printf("Process 2 is sleeping");
-			pthread_cond_wait(&cond_shm2, &mutex_shm2);
-		}
-		pthread_mutex_unlock(&mutex_shm2);
-		usleep(1);
-	}
-
-	task2_complete = 1;
-	return 0;
-}
-
 int main() {
 	pthread_t watchman;
 	int tq = 1 * 1000; // time-quant in microseconds
@@ -67,7 +42,7 @@ int main() {
 	child[0] = fork();
 
 	if (child[0] == 0) {
-		char *argv[] = {"./p1.out", "1000", "./input/thousand.txt", NULL};
+		char *argv[] = {"./p1.out", "1000000", "./input/onemil.txt", NULL};
 		execv(argv[0], argv);
 	} else {
 		child[1] = fork();

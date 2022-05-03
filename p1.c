@@ -184,6 +184,6 @@ int main(int argc, char *argv[]) {
 
 
 	printf("%f seconds to execute \n", time_taken);
-	printf("wait time is %f\n", wait_time);
+	printf("wait time for 1 is %f\n", wait_time);
 	return 0;
 }

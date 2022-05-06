@@ -56,17 +56,8 @@ fn main() {
 
     for _i in 0..MAX_THREADS {
         let th_tx = tx.clone();
-        let mut th_end = match th_start + offset as usize > content.len() {
-            true => content.len(),
-            false => th_start + offset as usize,
-        };
-
-        if th_end != content.len() {
-            while content[th_end] != b' ' {
-                th_end += 1;
-            }
-        }
-
+            
+        let th_end = get_th_end(offset, th_start, &content);
         let th_nums = content[th_start..th_end].to_vec();
         th_start = th_end;
 
@@ -93,4 +84,18 @@ fn main() {
     // for handle in threads {
     //     handle.join().unwrap();
     // }
+}
+
+fn get_th_end(offset: u64, th_start: usize, content: &[u8]) -> usize {
+    let mut th_end = match th_start + offset as usize > content.len() {
+        true => content.len(),
+        false => th_start + offset as usize,
+    };
+
+    if th_end != content.len() {
+        while content[th_end] != b' ' {
+            th_end += 1;
+        }
+    }
+    th_end
 }

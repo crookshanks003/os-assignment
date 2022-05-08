@@ -1,43 +1,20 @@
+use std::io::Write;
+use std::os::unix::net::UnixStream;
 use std::{
-    env,
     fs::{self, File},
     path::Path,
-    process, str,
+    process,
     sync::mpsc,
     thread,
 };
 
 const MAX_THREADS: usize = 10;
 
-struct Config {
-    filename: String,
-    size: u32,
-}
+use os2::{Config, SOCKET_PATH};
 
-impl Config {
-    fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments");
-        }
-        let filename = args[2].clone();
-        let size = match args[1].parse() {
-            Ok(x) => x,
-            Err(_x) => return Err("Size should be integer"),
-        };
-        Ok(Config { filename, size })
-    }
-}
-
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let config = Config::new(&args).unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {}", err);
-        println!("Use: cargo run <size> <filename>");
-        process::exit(1);
-    });
-
+pub fn main(config: Config) {
     let path = Path::new(&config.filename);
-    let mut numbers = Vec::new();
+    let mut numbers: Vec<Vec<u32>> = Vec::new();
     let f = File::open(path).unwrap_or_else(|err| {
         println!("Error reading file: {}", err);
         process::exit(1);
@@ -56,7 +33,7 @@ fn main() {
 
     for _i in 0..MAX_THREADS {
         let th_tx = tx.clone();
-            
+
         let th_end = get_th_end(offset, th_start, &content);
         let th_nums = content[th_start..th_end].to_vec();
         th_start = th_end;
@@ -73,17 +50,21 @@ fn main() {
     }
     drop(tx);
 
+    let socket = Path::new(SOCKET_PATH);
+
+    let mut stream = UnixStream::connect(&socket).unwrap_or_else(|err| {
+        println!("Failed to connect to socket: {}", err);
+        process::exit(1);
+    });
+
     for msg in rx {
-        for num in msg {
-            numbers.push(num);
-        }
+        numbers.push(msg);
     }
 
-    println!("Loaded {} numbers into memory", config.size);
+    let buf = serde_json::to_vec(&numbers).unwrap();
+    stream.write_all(&buf).unwrap();
 
-    // for handle in threads {
-    //     handle.join().unwrap();
-    // }
+    println!("Loaded {} numbers into memory", config.size);
 }
 
 fn get_th_end(offset: u64, th_start: usize, content: &[u8]) -> usize {

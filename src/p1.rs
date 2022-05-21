@@ -10,11 +10,11 @@ use std::{
 
 const MAX_THREADS: usize = 10;
 
+use nix::libc::sleep;
 use os2::{Config, SOCKET_PATH};
 
 pub fn main(config: Config) {
     let path = Path::new(&config.filename);
-    let mut numbers: Vec<Vec<u32>> = Vec::new();
     let f = File::open(path).unwrap_or_else(|err| {
         println!("Error reading file: {}", err);
         process::exit(1);
@@ -42,8 +42,9 @@ pub fn main(config: Config) {
             let s = String::from_utf8(th_nums).unwrap();
 
             let buf: Vec<u32> = s.split_whitespace().map(|st| st.parse().unwrap()).collect();
+            let serialized_buf = serde_json::to_vec(&buf).unwrap();
 
-            th_tx.send(buf).unwrap();
+            th_tx.send(serialized_buf).unwrap();
         });
 
         handles.push(th_handle);
@@ -57,14 +58,11 @@ pub fn main(config: Config) {
         process::exit(1);
     });
 
+    println!("Sending numbers to process 2...");
+
     for msg in rx {
-        numbers.push(msg);
+        stream.write(&msg).unwrap();
     }
-
-    let buf = serde_json::to_vec(&numbers).unwrap();
-    stream.write_all(&buf).unwrap();
-
-    println!("Loaded {} numbers into memory", config.size);
 }
 
 fn get_th_end(offset: u64, th_start: usize, content: &[u8]) -> usize {

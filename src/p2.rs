@@ -1,7 +1,4 @@
-use std::{
-    fs, io::Read, os::unix::net::UnixListener, path::Path, process,
-    sync::mpsc, thread,
-};
+use std::{fs, io::Read, os::unix::net::UnixListener, path::Path, process, sync::mpsc, thread};
 
 use os2::SOCKET_PATH;
 
@@ -26,18 +23,14 @@ pub fn main() {
         }
     };
 
-    for client in stream.incoming() {
-        let mut buf = String::new();
-        match client {
-            Ok(mut x) => {
-                x.read_to_string(&mut buf).unwrap();
-                numbers = serde_json::from_str(&buf).unwrap();
-                break;
-            }
-            Err(_) => {
-                println!("Could not read from the stream");
-                break;
-            }
+    match stream.accept() {
+        Ok((mut listener, _addr)) => {
+            let mut buf = String::new();
+            listener.read_to_string(&mut buf).unwrap();
+            numbers = serde_json::from_str(&buf).unwrap();
+        }
+        Err(_) => {
+            println!("Could not read from the stream");
         }
     }
 

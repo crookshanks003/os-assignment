@@ -1,3 +1,5 @@
+use std::os::unix::net::{UnixStream, UnixListener};
+
 pub static SOCKET_PATH: &'static str = "/tmp/os.sock";
 
 pub struct Config {
